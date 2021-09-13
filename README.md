@@ -1,1 +1,5 @@
-# programmable-led-scripts
+# Programmable LED Scripts
+
+```
+// TODO: Write README
+```
