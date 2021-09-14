@@ -44,8 +44,13 @@ void snake() {
       fadeToBlackBy(leds, TOTAL_NUM_LEDS, 50);
       leds[goal_position] = CRGB(255, 227, 69);
       leds[position] = CHSV(0, 0, brightness);
-      FastLED.show();
-      position = (position + direction) % TOTAL_NUM_LEDS;
+      position = position + direction;
+      if (position == TOTAL_NUM_LEDS) {
+        position = 0;
+      } if (position == -1) {
+        position = TOTAL_NUM_LEDS - 1;
+      }
+      FastLED.delay(30);
     }
   }
 }
