@@ -1,4 +1,4 @@
-#include "queue.hpp"
+#include "queue.h"
 
 Queue::Node::Node(int val): val_{val}, prev_{nullptr}, next_{nullptr} {
   // Nothing to see here, folks!
