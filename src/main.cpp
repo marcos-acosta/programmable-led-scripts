@@ -224,13 +224,16 @@ void meteor() {
 
   static const uint8_t DEFAULT_DELAY = 5;
   static uint16_t delay = DEFAULT_DELAY;
-  static const uint16_t STARTING_INDEX = 75;
-  static const uint16_t ENDING_INDEX = 224;
-  static const uint16_t MAX_WAIT = 10000;
+  static const uint16_t RIGHTMOST_INDEX = 75;
+  static const uint16_t LEFTMOST_INDEX = 224;
+  static const uint16_t MIN_WAIT = 5000;
+  static const uint16_t MAX_WAIT = 20000;
   static const uint8_t FADE = 75;
-  static uint16_t index = 75;
-  static const CRGB hue = CRGB().FairyLight;
+  static uint16_t index = RIGHTMOST_INDEX;
+  static uint16_t end_index = LEFTMOST_INDEX;
+  static const CRGB hue = CRGB().GhostWhite;
   static const CHSV clear{0, 0, 0};
+  static int8_t increment = 1;
 
   if (get_elapsed_time(prev_time) < DEFAULT_DELAY)
     return;
@@ -246,11 +249,19 @@ void meteor() {
   leds.fadeToBlackBy(FADE);
   leds[index] = hue;
 
-  (++index) %= ENDING_INDEX;
+  index += increment;
 
-  if (!index) {
-    index += STARTING_INDEX;
-    delay = rand() % MAX_WAIT;
+  if (index == end_index) {
+    if (rand() % 2) {
+      index = RIGHTMOST_INDEX;
+      end_index = LEFTMOST_INDEX;
+      increment = 1;
+    } else {
+      index = LEFTMOST_INDEX;
+      end_index = RIGHTMOST_INDEX;
+      increment = -1;
+    }
+    delay = MIN_WAIT + rand() % (MAX_WAIT - MIN_WAIT);
   }
 
   prev_time = current_millis;
