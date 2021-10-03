@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <FastLED.h>
-#include "queue.h"
 
 #define NUM_LEDS 300
 #define LED_PORT 6
@@ -21,6 +20,7 @@ void riggs_plaza_message();
 void yin_yang();
 void snake();
 void color_wave();
+void meteor();
 
 uint64_t get_elapsed_time(uint64_t curr_time) {
   return current_millis - curr_time;
@@ -54,10 +54,10 @@ void dispatch_function() {
       current_function = &snake;
       break;
     case 4:
-      current_function = &color_wave;
+      current_function = &meteor;
       break;
     case 5:
-      current_function = &clear_leds;
+      current_function = &color_wave;
       break;
     case 6:
       current_function = &clear_leds;
@@ -145,8 +145,8 @@ void color_wave() {
 }
 
 void yin_yang() {
-  static uint8_t hue_1 = 64;
-  static uint8_t hue_2 = 128;
+  static uint8_t hue_1 = 0b00000100;
+  static uint8_t hue_2 = 0b10011001;
 
   static uint64_t prev_time;
   static const uint8_t DELAY = 23;
@@ -163,16 +163,17 @@ void yin_yang() {
   leds.fadeToBlackBy(FADE);
 
   bool should_merge = START_TAIL <= index && index <= END_TAIL;
+  static uint8_t midpoint = (max(hue_1, hue_2) - min(hue_1, hue_2)) / 2;  
 
-  leds[index] = CHSV(hue_1 + should_merge * hue_2, 255, 255);
-  leds[NUM_LEDS - index - 1] = CHSV(hue_2 + should_merge * hue_1, 255, 255);
+  leds[index] = CHSV(!should_merge * hue_1 + should_merge * midpoint, 255, 255);
+  leds[NUM_LEDS - index - 1] = CHSV(!should_merge * hue_2 + should_merge * midpoint, 255, 255);
 
   // variable bookkeeping
   (++index) %= NUM_LEDS;
 
   if (index == 0) {
-    hue_1 += 5;
-    hue_2 -= 10;
+    hue_1 -= 5;
+    hue_2 += 10;
 
     // swap colors so we don't wrap around
     uint8_t temp = hue_1;
@@ -215,6 +216,44 @@ void snake() {
     position += NUM_LEDS;
   
   prev_time = millis();
+  FastLED.show();
+}
+
+void meteor() {
+  static uint64_t prev_time;
+
+  static const uint8_t DEFAULT_DELAY = 5;
+  static uint16_t delay = DEFAULT_DELAY;
+  static const uint16_t STARTING_INDEX = 75;
+  static const uint16_t ENDING_INDEX = 224;
+  static const uint16_t MAX_WAIT = 10000;
+  static const uint8_t FADE = 75;
+  static uint16_t index = 75;
+  static const CRGB hue = CRGB().FairyLight;
+  static const CHSV clear{0, 0, 0};
+
+  if (get_elapsed_time(prev_time) < DEFAULT_DELAY)
+    return;
+
+  if (get_elapsed_time(prev_time) < delay) {
+    leds.fadeToBlackBy(35);
+    FastLED.show();
+    return;
+  }
+
+  delay = DEFAULT_DELAY;
+  
+  leds.fadeToBlackBy(FADE);
+  leds[index] = hue;
+
+  (++index) %= ENDING_INDEX;
+
+  if (!index) {
+    index += STARTING_INDEX;
+    delay = rand() % MAX_WAIT;
+  }
+
+  prev_time = current_millis;
   FastLED.show();
 }
 
