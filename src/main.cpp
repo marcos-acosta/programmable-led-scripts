@@ -127,21 +127,20 @@ void riggs_plaza_message() {
 }
 
 void color_wave() {
-  static uint8_t hue;
+  static uint8_t hue = 0;
   static uint64_t prev_time;
-  static const uint8_t DELAY = 33;
+  static const uint8_t DEFAULT_DELAY = 200;
 
-  if (get_elapsed_time(prev_time) < DELAY)
+  if (get_elapsed_time(prev_time) < DEFAULT_DELAY)
     return;
 
-
-  for(int i = 0; i < NUM_LEDS; ++i) {   
-    leds.fadeToBlackBy(25);
-    leds[i] = CHSV(hue++,255,127);
-    FastLED.delay(33);
+  for (uint16_t i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CHSV(hue,255,127);
   }
+  hue++;
 
-  prev_time = millis();
+  prev_time = current_millis;
+  FastLED.show();
 }
 
 void yin_yang() {
@@ -222,24 +221,25 @@ void snake() {
 void meteor() {
   static uint64_t prev_time;
 
-  static const uint8_t DEFAULT_DELAY = 5;
+  static const uint8_t DEFAULT_DELAY = 1;
   static uint16_t delay = DEFAULT_DELAY;
   static const uint16_t RIGHTMOST_INDEX = 75;
   static const uint16_t LEFTMOST_INDEX = 224;
-  static const uint16_t MIN_WAIT = 5000;
+  static const uint16_t MIN_WAIT = 500;
   static const uint16_t MAX_WAIT = 20000;
   static const uint8_t FADE = 75;
   static uint16_t index = RIGHTMOST_INDEX;
   static uint16_t end_index = LEFTMOST_INDEX;
-  static const CRGB hue = CRGB().GhostWhite;
+  static const CRGB METEOR_COLOR = CHSV(170, 8, 128);
   static const CHSV clear{0, 0, 0};
-  static int8_t increment = 1;
+  static const int8_t MOVE_AMOUNT_MAGNITUDE = 2;
+  static int8_t move_amount = MOVE_AMOUNT_MAGNITUDE;
 
   if (get_elapsed_time(prev_time) < DEFAULT_DELAY)
     return;
 
   if (get_elapsed_time(prev_time) < delay) {
-    leds.fadeToBlackBy(35);
+    leds.fadeToBlackBy(50);
     FastLED.show();
     return;
   }
@@ -247,19 +247,19 @@ void meteor() {
   delay = DEFAULT_DELAY;
   
   leds.fadeToBlackBy(FADE);
-  leds[index] = hue;
+  leds[index] = METEOR_COLOR;
 
-  index += increment;
+  index += move_amount;
 
-  if (index == end_index) {
+  if ((move_amount > 0 && index >= end_index) || (move_amount < 0 && index <= end_index)) {
     if (rand() % 2) {
       index = RIGHTMOST_INDEX;
       end_index = LEFTMOST_INDEX;
-      increment = 1;
+      move_amount = MOVE_AMOUNT_MAGNITUDE;
     } else {
       index = LEFTMOST_INDEX;
       end_index = RIGHTMOST_INDEX;
-      increment = -1;
+      move_amount = -MOVE_AMOUNT_MAGNITUDE;
     }
     delay = MIN_WAIT + rand() % (MAX_WAIT - MIN_WAIT);
   }
