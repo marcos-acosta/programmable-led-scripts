@@ -21,6 +21,7 @@ void yin_yang();
 void snake();
 void color_wave();
 void meteor();
+void twinkle();
 
 uint64_t get_elapsed_time(uint64_t curr_time) {
   return current_millis - curr_time;
@@ -60,7 +61,7 @@ void dispatch_function() {
       current_function = &color_wave;
       break;
     case 6:
-      current_function = &clear_leds;
+      current_function = &twinkle;
       break;
     case 7:
       current_function = &clear_leds;
@@ -127,7 +128,7 @@ void riggs_plaza_message() {
 }
 
 void color_wave() {
-  static uint8_t hue = 0;
+  static uint8_t hue;
   static uint64_t prev_time;
   static const uint8_t DEFAULT_DELAY = 200;
 
@@ -221,48 +222,76 @@ void snake() {
 void meteor() {
   static uint64_t prev_time;
 
+  // constants
   static const uint8_t DEFAULT_DELAY = 1;
-  static uint16_t delay = DEFAULT_DELAY;
   static const uint16_t RIGHTMOST_INDEX = 75;
   static const uint16_t LEFTMOST_INDEX = 224;
   static const uint16_t MIN_WAIT = 500;
   static const uint16_t MAX_WAIT = 20000;
   static const uint8_t FADE = 75;
+  static const CHSV METEOR_COLOR{170, 8, 128};
+  static const int8_t MOVE_AMOUNT_MAGNITUDE = 2;
+
+  // state variables
+  static uint16_t delay = DEFAULT_DELAY;
   static uint16_t index = RIGHTMOST_INDEX;
   static uint16_t end_index = LEFTMOST_INDEX;
-  static const CRGB METEOR_COLOR = CHSV(170, 8, 128);
-  static const CHSV clear{0, 0, 0};
-  static const int8_t MOVE_AMOUNT_MAGNITUDE = 2;
   static int8_t move_amount = MOVE_AMOUNT_MAGNITUDE;
 
   if (get_elapsed_time(prev_time) < DEFAULT_DELAY)
     return;
 
+  // checks to see if it is time for a new meteor and dims all lights
   if (get_elapsed_time(prev_time) < delay) {
     leds.fadeToBlackBy(50);
     FastLED.show();
     return;
   }
 
+  // reset the meteor delay to default
   delay = DEFAULT_DELAY;
   
   leds.fadeToBlackBy(FADE);
   leds[index] = METEOR_COLOR;
 
   index += move_amount;
+  
+  // logic to determiine where the meteor starts from
+  bool initialize_move = 
+    (move_amount > 0 && index >= end_index) ||
+    (move_amount < 0 && index <= end_index);
 
-  if ((move_amount > 0 && index >= end_index) || (move_amount < 0 && index <= end_index)) {
-    if (rand() % 2) {
-      index = RIGHTMOST_INDEX;
-      end_index = LEFTMOST_INDEX;
-      move_amount = MOVE_AMOUNT_MAGNITUDE;
-    } else {
-      index = LEFTMOST_INDEX;
-      end_index = RIGHTMOST_INDEX;
-      move_amount = -MOVE_AMOUNT_MAGNITUDE;
-    }
+  if (initialize_move) {
+    bool new_direction = rand() % 2;
+
+    index = new_direction ? RIGHTMOST_INDEX : LEFTMOST_INDEX;
+    end_index = new_direction ? LEFTMOST_INDEX : RIGHTMOST_INDEX;
+    move_amount = MOVE_AMOUNT_MAGNITUDE * (new_direction ? 1 : -1);
+
     delay = MIN_WAIT + rand() % (MAX_WAIT - MIN_WAIT);
   }
+
+  prev_time = current_millis;
+  FastLED.show();
+}
+
+void twinkle() {
+  static uint64_t prev_time;
+  static const uint16_t DELAY = 100;
+  static const uint8_t FADE = 5;
+  static const CHSV hue{170, 8, 64};
+  static const uint8_t STARTING_INDEX = 75;
+  static const uint8_t ENDING_INDEX = 225;
+  static const uint8_t PROBABILITY = 50;
+
+  if (get_elapsed_time(prev_time) < DELAY)
+    return;
+
+  leds.fadeToBlackBy(FADE);
+  uint8_t index = rand() % (ENDING_INDEX - STARTING_INDEX) + STARTING_INDEX;
+  
+  if ((rand() % 100) < PROBABILITY)
+    leds[index] = hue;
 
   prev_time = current_millis;
   FastLED.show();
