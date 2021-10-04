@@ -21,6 +21,7 @@ void yin_yang();
 void snake();
 void color_wave();
 void meteor();
+void twinkle();
 
 uint64_t get_elapsed_time(uint64_t curr_time) {
   return current_millis - curr_time;
@@ -60,7 +61,7 @@ void dispatch_function() {
       current_function = &color_wave;
       break;
     case 6:
-      current_function = &clear_leds;
+      current_function = &twinkle;
       break;
     case 7:
       current_function = &clear_leds;
@@ -269,6 +270,28 @@ void meteor() {
 
     delay = MIN_WAIT + rand() % (MAX_WAIT - MIN_WAIT);
   }
+
+  prev_time = current_millis;
+  FastLED.show();
+}
+
+void twinkle() {
+  static uint64_t prev_time;
+  static const uint16_t DELAY = 100;
+  static const uint8_t FADE = 5;
+  static const CHSV hue{170, 8, 64};
+  static const uint8_t STARTING_INDEX = 75;
+  static const uint8_t ENDING_INDEX = 225;
+  static const uint8_t PROBABILITY = 50;
+
+  if (get_elapsed_time(prev_time) < DELAY)
+    return;
+
+  leds.fadeToBlackBy(FADE);
+  uint8_t index = rand() % (ENDING_INDEX - STARTING_INDEX) + STARTING_INDEX;
+  
+  if ((rand() % 100) < PROBABILITY)
+    leds[index] = hue;
 
   prev_time = current_millis;
   FastLED.show();
