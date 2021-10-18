@@ -315,11 +315,11 @@ void twinkle() {
 
   // reset all values
   for (uint8_t i = 0; i < (TOP_LEFT_INDEX - TOP_RIGHT_INDEX); ++i) {
-    if (stars[i] == MAX_STAR_VAL && rand() % 100 < DESPAWN_PROBABILITY) {
-      // A star dies
-      --stars[i];
+    if (stars[i] == MAX_STAR_VAL) {
+      if (rand() % 100 < DESPAWN_PROBABILITY) {
+        --stars[i];
+      }
     }
-    
     // Brightness increment / decrement is based on the parity of its star value
     else if (stars[i] > 0) {
       stars[i] += (stars[i] % 2 == 0) ? -2 : 2;
