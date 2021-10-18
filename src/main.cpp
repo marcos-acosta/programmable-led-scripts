@@ -297,7 +297,7 @@ void twinkle() {
 
   // Uses arbitrary brightness scale; max value must be odd
   static const uint8_t MAX_STAR_VAL = 41;
-  static uint8_t stars[TOP_LEFT_INDEX - TOP_RIGHT_INDEX];
+  static uint8_t stars[TOP_LEFT_INDEX - TOP_RIGHT_INDEX] = {0};
   uint8_t new_index;
 
   if (get_elapsed_time(prev_time) < DELAY)
