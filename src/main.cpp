@@ -23,6 +23,11 @@ void color_wave();
 void meteor();
 void twinkle();
 
+// boundary constants
+const uint8_t TOP_RIGHT_INDEX = 76;
+const uint8_t TOP_LEFT_INDEX = 224;
+
+// helper functions
 uint64_t get_elapsed_time(uint64_t curr_time) {
   return current_millis - curr_time;
 }
@@ -34,12 +39,19 @@ void setup_pins() {
 }
 
 void dispatch_function() {
+  static uint8_t last_func_code;
+  static uint8_t func_code;
+
   uint8_t pin_1 = digitalRead(INPUT_PIN_3) << 2;
   uint8_t pin_2 = digitalRead(INPUT_PIN_2) << 1;
   uint8_t pin_3 = digitalRead(INPUT_PIN_1);
 
-  uint8_t func_code = 7 - (pin_1 | pin_2 | pin_3);
-  Serial.println(func_code);
+  func_code = 7 - (pin_1 | pin_2 | pin_3);
+
+  if (last_func_code != func_code) {
+    clear_leds();
+    last_func_code = func_code;
+  }
 
   switch(func_code) {
     case 0:
@@ -71,6 +83,7 @@ void dispatch_function() {
   }
 }
 
+// light show functions
 void clear_leds() {
   for (size_t i = 0; i < NUM_LEDS; ++i)
     leds[i] = CHSV(0, 0, 0);
@@ -224,8 +237,6 @@ void meteor() {
 
   // constants
   static const uint8_t DEFAULT_DELAY = 1;
-  static const uint16_t RIGHTMOST_INDEX = 75;
-  static const uint16_t LEFTMOST_INDEX = 224;
   static const uint16_t MIN_WAIT = 500;
   static const uint16_t MAX_WAIT = 20000;
   static const uint8_t FADE = 75;
@@ -234,8 +245,8 @@ void meteor() {
 
   // state variables
   static uint16_t delay = DEFAULT_DELAY;
-  static uint16_t index = RIGHTMOST_INDEX;
-  static uint16_t end_index = LEFTMOST_INDEX;
+  static uint16_t index = TOP_RIGHT_INDEX;
+  static uint16_t end_index = TOP_LEFT_INDEX;
   static int8_t move_amount = MOVE_AMOUNT_MAGNITUDE;
 
   if (get_elapsed_time(prev_time) < DEFAULT_DELAY)
@@ -264,8 +275,8 @@ void meteor() {
   if (initialize_move) {
     bool new_direction = rand() % 2;
 
-    index = new_direction ? RIGHTMOST_INDEX : LEFTMOST_INDEX;
-    end_index = new_direction ? LEFTMOST_INDEX : RIGHTMOST_INDEX;
+    index = new_direction ? TOP_RIGHT_INDEX : TOP_LEFT_INDEX;
+    end_index = new_direction ? TOP_LEFT_INDEX : TOP_RIGHT_INDEX;
     move_amount = MOVE_AMOUNT_MAGNITUDE * (new_direction ? 1 : -1);
 
     delay = MIN_WAIT + rand() % (MAX_WAIT - MIN_WAIT);
@@ -277,21 +288,45 @@ void meteor() {
 
 void twinkle() {
   static uint64_t prev_time;
-  static const uint16_t DELAY = 100;
-  static const uint8_t FADE = 5;
-  static const CHSV hue{170, 8, 64};
-  static const uint8_t STARTING_INDEX = 75;
-  static const uint8_t ENDING_INDEX = 225;
-  static const uint8_t PROBABILITY = 50;
+  static const uint16_t DELAY = 50;
+  static const uint8_t STAR_HUE = 170;
+  static const uint8_t STAR_SATURATION = 8;
+  static const uint8_t MAX_BRIGHTNESS = 64;
+  static const uint8_t NEW_STAR_PROBABILITY = 9;
+  static const uint8_t DESPAWN_PROBABILITY = 3;
+
+  // Uses arbitrary brightness scale; max value must be odd
+  static const uint8_t MAX_STAR_VAL = 41;
+  static uint8_t stars[TOP_LEFT_INDEX - TOP_RIGHT_INDEX] = {0};
+  uint8_t new_index;
 
   if (get_elapsed_time(prev_time) < DELAY)
     return;
 
-  leds.fadeToBlackBy(FADE);
-  uint8_t index = rand() % (ENDING_INDEX - STARTING_INDEX) + STARTING_INDEX;
-  
-  if ((rand() % 100) < PROBABILITY)
-    leds[index] = hue;
+  if (rand() % 100 < NEW_STAR_PROBABILITY) {
+    // A star is born
+    // ensure that the new index does not coincide with a star that already exists
+    do {
+      new_index = rand() % (TOP_LEFT_INDEX - TOP_RIGHT_INDEX);
+    } while (stars[new_index] > 0);
+    
+    stars[new_index] = 1;
+  }
+
+  // reset all values
+  for (uint8_t i = 0; i < (TOP_LEFT_INDEX - TOP_RIGHT_INDEX); ++i) {
+    if (stars[i] == MAX_STAR_VAL && rand() % 100 < DESPAWN_PROBABILITY) {
+      // A star dies
+      --stars[i];
+    }
+    
+    // Brightness increment / decrement is based on the parity of its star value
+    else if (stars[i] > 0) {
+      stars[i] += (stars[i] % 2 == 0) ? -2 : 2;
+    }
+
+    leds[TOP_RIGHT_INDEX + i] = CHSV(STAR_HUE, STAR_SATURATION, MAX_BRIGHTNESS * stars[i] / MAX_STAR_VAL);
+  }
 
   prev_time = current_millis;
   FastLED.show();
