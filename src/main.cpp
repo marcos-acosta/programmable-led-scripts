@@ -362,7 +362,7 @@ void loop() {
   uint16_t pos2 = rand() % (TOP_LEFT_INDEX - TOP_RIGHT_INDEX) + TOP_RIGHT_INDEX;
   
   Player p1{CRGB(128, 0, 0), pos1, 3, -1, 4, 1};
-  Player p2{CRGB(0, 128, 0), pos2, -3, -1, 4, 1};
+  Player p2{CRGB(0, 0, 128), pos2, -3, -1, 4, 1};
 
   PhysicsEngine engine{&leds, p1, p2, TOP_RIGHT_INDEX, TOP_LEFT_INDEX};
 
