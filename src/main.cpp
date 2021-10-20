@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
+#include "player.hpp"
+#include "physics_engine.hpp"
 
 #define NUM_LEDS 300
 #define LED_PORT 6
@@ -7,6 +9,9 @@
 #define INPUT_PIN_1 2
 #define INPUT_PIN_2 3
 #define INPUT_PIN_3 4
+
+#define TOP_RIGHT_INDEX 80
+#define TOP_LEFT_INDEX 220
 
 // defining led array
 CRGBArray<NUM_LEDS> leds;
@@ -22,10 +27,6 @@ void snake();
 void color_wave();
 void meteor();
 void twinkle();
-
-// boundary constants
-const uint8_t TOP_RIGHT_INDEX = 76;
-const uint8_t TOP_LEFT_INDEX = 224;
 
 // helper functions
 uint64_t get_elapsed_time(uint64_t curr_time) {
@@ -341,10 +342,35 @@ void setup() {
   delay(2000);
 }
 
+// void loop() {
+//   // put your main code here, to run repeatedly:
+//   current_millis = millis();
+//   dispatch_function();
+
+//   current_function();
+// }
+
+void updateAccel(Player& player) {
+  if (abs(player.getVel()) >= 4 && ((player.getVel() < 0) ^ (player.getAccel() > 0)))
+    player.setAccel(player.getAccel() * -1);
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
-  current_millis = millis();
-  dispatch_function();
+  clear_leds();
+  uint16_t pos1 = rand() % (TOP_LEFT_INDEX - TOP_RIGHT_INDEX) + TOP_RIGHT_INDEX;
+  uint16_t pos2 = rand() % (TOP_LEFT_INDEX - TOP_RIGHT_INDEX) + TOP_RIGHT_INDEX;
+  
+  Player p1{CRGB(128, 0, 0), pos1, 3, -1, 4, 1};
+  Player p2{CRGB(0, 128, 0), pos2, -3, -1, 4, 1};
 
-  current_function();
+  PhysicsEngine engine{&leds, p1, p2, TOP_RIGHT_INDEX, TOP_LEFT_INDEX};
+
+  while (1) {
+    leds.fadeToBlackBy(128);
+
+    ++engine;
+
+    FastLED.delay(50);
+  }
 }
