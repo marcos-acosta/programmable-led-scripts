@@ -3,37 +3,7 @@
 #include <FastLED.h>
 #include <stdlib.h>
 
-static bool checkCollision(Player& player1, Player& player2) {
-  uint16_t& pos1a = player1.getPos();
-  uint16_t& pos2a = player2.getPos();
-
-  uint16_t pos1b = player1.getPos() + player1.getVel();
-  uint16_t pos2b = player2.getPos() + player2.getVel();
-
-  return (abs(pos1a - pos2a) > abs(pos1b - pos2b) && abs(pos1b - pos2b) < 5);
-}
-
-void PhysicsEngine::checkPos(Player& player) {
-  uint16_t pos = player.getPos();
-  int8_t& vel = player.getVel();
-  int8_t& acc = player.getAccel();
-
-  // make sure we don't go below the lower bound
-  pos = max(lBound_, pos);
-
-  // make sure we don't go above the upper bound
-  pos = min(uBound_, pos);
-
-  if (pos == lBound_) {
-    vel = abs(vel);
-    acc = abs(acc);
-  }
-
-  if (pos == uBound_) {
-    vel = -abs(vel);
-    acc = -abs(acc);
-  }
-}
+#define ACCEL_CONST 10000
 
 PhysicsEngine::PhysicsEngine(
   CRGBArray<NUM_LEDS_PRIV> *leds,
@@ -47,44 +17,77 @@ PhysicsEngine::PhysicsEngine(
     lBound_{lBound},
     uBound_{uBound} {
   // nothing to instantiate
+
+  player1.setMinPos(lBound);
+  player1.setMaxPos(uBound);
+
+  player2.setMinPos(lBound);
+  player2.setMaxPos(uBound);
+}
+
+bool PhysicsEngine::doesCollide() {
+  static int8_t prev_dir;
+
+  int16_t pos1 = (int16_t) player1_.getPos();
+  int16_t pos2 = (int16_t) player2_.getPos();
+
+  bool collides = prev_dir != sgn(pos1 - pos2);
+  prev_dir = sgn(pos1 - pos2);
+
+  return collides;
 }
 
 void PhysicsEngine::evolve() {
   ++player1_;
   ++player2_;
 
-  checkState();
+  updateState();
+  updateAccel();
 
   // update leds
   (*leds_)[player1_.getPos()] += player1_.getColor();
   (*leds_)[player2_.getPos()] += player2_.getColor();
 }
 
-void PhysicsEngine::checkState() {
-  // check positions
-  checkPos(player1_);
-  checkPos(player2_);
+void PhysicsEngine::updateAccel() {
+  int16_t sgn_dist = ((int16_t) player1_.getPos()) - ((int16_t) player2_.getPos());
+  int16_t dist = abs(sgn_dist);
+  int8_t sgn1 = sgn(-sgn_dist);
+  int8_t sgn2 = sgn(sgn_dist);
 
-  if (checkCollision(player1_, player2_) && rand() % 2) {
+  if (dist == 0) dist = 1;
+
+  player1_.setAccel(sgn1 * ACCEL_CONST / dist / dist);
+  player2_.setAccel(sgn2 * ACCEL_CONST / dist / dist);
+
+  // Serial.println(dist);
+  // Serial.println(ACCEL_CONST / dist / dist);
+  // Serial.println(player1_.getPos());
+  // Serial.println(player1_.getVel());
+  // Serial.println(player1_.getAccel());
+  // Serial.println(player2_.getAccel());
+  // Serial.println();
+}
+
+void PhysicsEngine::updateState() {
+  if (doesCollide()) {
     int8_t sign = rand() % 2 ? 1 : -1;
 
     uint8_t vel1, vel2;
     do {
-      vel1 = rand() % player1_.getMaxVel();
+      vel1 = (player1_.getMaxVel() / 2) + rand() % (player1_.getMaxVel() / 2);
     } while (!vel1);
     
     do {
-      vel2 = rand() % player2_.getMaxVel();
+      vel2 = (player2_.getMaxVel() / 2) + rand() % (player2_.getMaxVel() / 2);
     } while (!vel2);
 
-    uint8_t acc1 = rand() % 3 - 1;
-    uint8_t acc2 = rand() % 3 - 1;
-
     player1_.setVel(sign * vel1);
-    player1_.setAccel(-sign * acc1);
-
     player2_.setVel(-sign * vel2);
-    player2_.setAccel(sign * acc2);
+
+    // Serial.println(sign * vel1);
+    // Serial.println(-sign * vel2);
+    // Serial.println();
   }
 }
 

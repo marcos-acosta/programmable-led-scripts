@@ -5,10 +5,15 @@
 #include <FastLED.h>
 #include "player.hpp"
 
-#define NUM_LEDS_PRIV 300
+#ifndef NUM_LEDS_PRIV
+  #define NUM_LEDS_PRIV 300
+#endif
+
+#ifndef sgn
+  #define sgn(x) ((x>0)?(1):(-1))
+#endif
 
 class PhysicsEngine {
-
  public:
   CRGBArray<NUM_LEDS_PRIV> *leds_;
   Player player1_;
@@ -20,16 +25,6 @@ class PhysicsEngine {
   ~PhysicsEngine() = default;
 
   /**
-   * @brief Evolves the physics engine by 1 iteration
-   */
-  void evolve();
-
-  /**
-   * @brief Checks the state of the engine and updates variables as needed
-   */
-  void checkState();
-
-  /**
    * @brief Alias for evolve
    * 
    * @return PhysicsEngine& A reference to this physics engine
@@ -38,11 +33,24 @@ class PhysicsEngine {
 
  private:
   /**
-   * @brief Checks the position of a player enforces the restrictions
-   * 
-   * @param player The player to check the position of
+   * @brief Checks if the current state of the system will collide in the next cycle
    */
-  void checkPos(Player& player);
+  bool doesCollide();
+
+  /**
+   * @brief Evolves the physics engine by 1 iteration
+   */
+  void evolve();
+
+  /**
+   * @brief Checks the state of the engine and updates variables as needed
+   */
+  void updateState();
+
+  /**
+   * @brief Updates the acceleration of the players based on the state of the system
+   */
+  void updateAccel();
 };
 
 #endif
