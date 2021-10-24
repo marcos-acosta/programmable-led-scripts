@@ -9,6 +9,7 @@
 #define INPUT_PIN_1 2
 #define INPUT_PIN_2 3
 #define INPUT_PIN_3 4
+#define INPUT_PIN_4 5
 
 #define TOP_RIGHT_INDEX 76
 #define TOP_LEFT_INDEX 223
@@ -40,17 +41,19 @@ void setup_pins() {
   pinMode(INPUT_PIN_1, INPUT_PULLUP);
   pinMode(INPUT_PIN_2, INPUT_PULLUP);
   pinMode(INPUT_PIN_3, INPUT_PULLUP);
+  pinMode(INPUT_PIN_4, INPUT_PULLUP);
 }
 
 void dispatch_function() {
   static uint8_t last_func_code;
   static uint8_t func_code;
 
-  uint8_t pin_1 = digitalRead(INPUT_PIN_3) << 2;
-  uint8_t pin_2 = digitalRead(INPUT_PIN_2) << 1;
-  uint8_t pin_3 = digitalRead(INPUT_PIN_1);
+  uint8_t pin_1 = digitalRead(INPUT_PIN_4) << 3;
+  uint8_t pin_2 = digitalRead(INPUT_PIN_3) << 2;
+  uint8_t pin_3 = digitalRead(INPUT_PIN_2) << 1;
+  uint8_t pin_4 = digitalRead(INPUT_PIN_1);
 
-  func_code = 7 - (pin_1 | pin_2 | pin_3);
+  func_code = 15 - (pin_1 | pin_2 | pin_3 | pin_4);
 
   if (last_func_code != func_code) {
     clear_leds();
@@ -81,6 +84,30 @@ void dispatch_function() {
       break;
     case 7:
       current_function = &lightsaber_battle;
+      break;
+    case 8:
+      current_function = &polyrhythm;
+      break;
+    case 9:
+      current_function = &clear_leds;
+      break;
+    case 10:
+      current_function = &clear_leds;
+      break;
+    case 11:
+      current_function = &clear_leds;
+      break;
+    case 12:
+      current_function = &clear_leds;
+      break;
+    case 13:
+      current_function = &clear_leds;
+      break;
+    case 14:
+      current_function = &clear_leds;
+      break;
+    case 15:
+      current_function = &clear_leds;
       break;
     default:
       break;
@@ -360,8 +387,8 @@ void polyrhythm() {
   static const uint16_t DELAY = 20;
   static const uint8_t FADE = 40;
 
-  static Player p1{CRGB(128, 0, 0), 0, 32, 0, 0, TOP_RIGHT_INDEX - 2, 32, 0};
-  static Player p2{CRGB(0, 0, 128), TOP_LEFT_INDEX, -24, 0, TOP_LEFT_INDEX + 2, NUM_LEDS - 1, 24, 0};
+  static Player p1{CRGB(128, 0, 0), 0, 40, 0, 0, TOP_RIGHT_INDEX - 2, 40, 0};
+  static Player p2{CRGB(0, 0, 128), TOP_LEFT_INDEX, -30, 0, TOP_LEFT_INDEX + 2, NUM_LEDS - 1, 30, 0};
 
   if (get_elapsed_time(prev_time) < DELAY)
     return;
