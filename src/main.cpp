@@ -10,8 +10,8 @@
 #define INPUT_PIN_2 3
 #define INPUT_PIN_3 4
 
-#define TOP_RIGHT_INDEX 77
-#define TOP_LEFT_INDEX 222
+#define TOP_RIGHT_INDEX 76
+#define TOP_LEFT_INDEX 223
 #define TOP_LENGTH (TOP_LEFT_INDEX - TOP_RIGHT_INDEX)
 
 // defining led array
@@ -29,6 +29,7 @@ void color_wave();
 void meteor();
 void twinkle();
 void lightsaber_battle();
+void polyrhythm();
 
 // helper functions
 uint64_t get_elapsed_time(uint64_t curr_time) {
@@ -349,6 +350,27 @@ void lightsaber_battle() {
 
   leds.fadeToBlackBy(FADE);
   ++engine;
+
+  prev_time = current_millis;
+  FastLED.show();
+}
+
+void polyrhythm() {
+  static uint64_t prev_time;
+  static const uint16_t DELAY = 20;
+  static const uint8_t FADE = 40;
+
+  static Player p1{CRGB(128, 0, 0), 0, 32, 0, 0, TOP_RIGHT_INDEX - 2, 32, 0};
+  static Player p2{CRGB(0, 0, 128), TOP_LEFT_INDEX, -24, 0, TOP_LEFT_INDEX + 2, NUM_LEDS - 1, 24, 0};
+
+  if (get_elapsed_time(prev_time) < DELAY)
+    return;
+
+  leds.fadeToBlackBy(FADE);
+  ++p1; ++p2;
+
+  leds[p1.getPos()] += p1.getColor();
+  leds[NUM_LEDS - (p2.getPos() - p2.getMinPos()) - 1] += p2.getColor();
 
   prev_time = current_millis;
   FastLED.show();
