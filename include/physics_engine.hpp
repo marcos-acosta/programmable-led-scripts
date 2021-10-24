@@ -15,13 +15,13 @@
 
 class PhysicsEngine {
  public:
-  CRGBArray<NUM_LEDS_PRIV> *leds_;
+  CRGBArray<NUM_LEDS_PRIV> leds_;
   Player player1_;
   Player player2_;
   uint16_t lBound_, uBound_;
 
   // constructors and destructors
-  PhysicsEngine(CRGBArray<NUM_LEDS_PRIV> *leds, Player& player1, Player& player2, uint16_t lBound, uint16_t uBound);
+  PhysicsEngine(CRGBArray<NUM_LEDS_PRIV>& leds, Player& player1, Player& player2, uint16_t lBound, uint16_t uBound);
   ~PhysicsEngine() = default;
 
   /**
@@ -43,9 +43,9 @@ class PhysicsEngine {
   void evolve();
 
   /**
-   * @brief Checks the state of the engine and updates variables as needed
+   * @brief Checks the state of the engine and updates variables if collision occurs
    */
-  void updateState();
+  void updateCollision();
 
   /**
    * @brief Updates the acceleration of the players based on the state of the system

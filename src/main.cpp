@@ -370,7 +370,7 @@ void lightsaber_battle() {
 
   static Player p1{CRGB(128, 0, 0), 30, (uint16_t) ((rand() % TOP_LENGTH) + TOP_RIGHT_INDEX), 30, 1, TOP_RIGHT_INDEX, TOP_LEFT_INDEX, 70, 4};
   static Player p2{CRGB(0, 0, 128), 30, (TOP_LEFT_INDEX + TOP_RIGHT_INDEX) / 2, 30, 1, TOP_RIGHT_INDEX, TOP_LEFT_INDEX, 70, 4};
-  static PhysicsEngine engine{&leds, p1, p2, TOP_RIGHT_INDEX, TOP_LEFT_INDEX};
+  static PhysicsEngine engine{leds, p1, p2, TOP_RIGHT_INDEX, TOP_LEFT_INDEX};
 
   if (get_elapsed_time(prev_time) < DELAY)
     return;

@@ -4,9 +4,10 @@
 #include <stdlib.h>
 
 #define ACCEL_CONST 10000
+#define PROB_PASS 80
 
 PhysicsEngine::PhysicsEngine(
-  CRGBArray<NUM_LEDS_PRIV> *leds,
+  CRGBArray<NUM_LEDS_PRIV>& leds,
   Player& player1,
   Player& player2,
   uint16_t lBound,
@@ -41,12 +42,12 @@ void PhysicsEngine::evolve() {
   ++player1_;
   ++player2_;
 
-  updateState();
+  updateCollision();
   updateAccel();
 
   // update leds
-  (*leds_)[player1_.getPos()] += player1_.getColor();
-  (*leds_)[player2_.getPos()] += player2_.getColor();
+  leds_[player1_.getPos()] += player1_.getColor();
+  leds_[player2_.getPos()] += player2_.getColor();
 }
 
 void PhysicsEngine::updateAccel() {
@@ -59,36 +60,21 @@ void PhysicsEngine::updateAccel() {
 
   player1_.setAccel(sgn1 * ACCEL_CONST / dist / dist);
   player2_.setAccel(sgn2 * ACCEL_CONST / dist / dist);
-
-  // Serial.println(dist);
-  // Serial.println(ACCEL_CONST / dist / dist);
-  // Serial.println(player1_.getPos());
-  // Serial.println(player1_.getVel());
-  // Serial.println(player1_.getAccel());
-  // Serial.println(player2_.getAccel());
-  // Serial.println();
 }
 
-void PhysicsEngine::updateState() {
-  if (doesCollide()) {
-    int8_t sign = rand() % 2 ? 1 : -1;
+void PhysicsEngine::updateCollision() {
+  if (!doesCollide()) return;
 
-    uint8_t vel1, vel2;
-    do {
-      vel1 = (player1_.getMaxVel() / 2) + rand() % (player1_.getMaxVel() / 2);
-    } while (!vel1);
-    
-    do {
-      vel2 = (player2_.getMaxVel() / 2) + rand() % (player2_.getMaxVel() / 2);
-    } while (!vel2);
+  // random struggle time
+  delay(rand() % 5 * 10);
 
-    player1_.setVel(sign * vel1);
-    player2_.setVel(-sign * vel2);
+  int8_t new_dir = rand() % 100 > PROB_PASS ? 1 : -1;
 
-    // Serial.println(sign * vel1);
-    // Serial.println(-sign * vel2);
-    // Serial.println();
-  }
+  uint8_t vel1 = (player1_.getMaxVel() / 2) + rand() % (player1_.getMaxVel() / 2);
+  uint8_t vel2 = (player2_.getMaxVel() / 2) + rand() % (player2_.getMaxVel() / 2);
+
+  player1_.setVel(new_dir * sgn(player1_.getVel()) * vel1);
+  player2_.setVel(new_dir * sgn(player2_.getVel()) * vel2);
 }
 
 PhysicsEngine& PhysicsEngine::operator++() {
