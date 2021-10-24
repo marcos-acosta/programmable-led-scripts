@@ -10,8 +10,9 @@
 #define INPUT_PIN_2 3
 #define INPUT_PIN_3 4
 
-#define TOP_RIGHT_INDEX 80
-#define TOP_LEFT_INDEX 220
+#define TOP_RIGHT_INDEX 77
+#define TOP_LEFT_INDEX 222
+#define TOP_LENGTH (TOP_LEFT_INDEX - TOP_RIGHT_INDEX)
 
 // defining led array
 CRGBArray<NUM_LEDS> leds;
@@ -27,6 +28,7 @@ void snake();
 void color_wave();
 void meteor();
 void twinkle();
+void lightsaber_battle();
 
 // helper functions
 uint64_t get_elapsed_time(uint64_t curr_time) {
@@ -77,7 +79,7 @@ void dispatch_function() {
       current_function = &twinkle;
       break;
     case 7:
-      current_function = &clear_leds;
+      current_function = &lightsaber_battle;
       break;
     default:
       break;
@@ -298,7 +300,7 @@ void twinkle() {
 
   // Uses arbitrary brightness scale; max value must be odd
   static const uint8_t MAX_STAR_VAL = 41;
-  static uint8_t stars[TOP_LEFT_INDEX - TOP_RIGHT_INDEX] = {0};
+  static uint8_t stars[TOP_LENGTH] = {0};
   uint8_t new_index;
 
   if (get_elapsed_time(prev_time) < DELAY)
@@ -308,14 +310,14 @@ void twinkle() {
     // A star is born
     // ensure that the new index does not coincide with a star that already exists
     do {
-      new_index = rand() % (TOP_LEFT_INDEX - TOP_RIGHT_INDEX);
+      new_index = rand() % TOP_LENGTH;
     } while (stars[new_index] > 0);
     
     stars[new_index] = 1;
   }
 
   // reset all values
-  for (uint8_t i = 0; i < (TOP_LEFT_INDEX - TOP_RIGHT_INDEX); ++i) {
+  for (uint8_t i = 0; i < TOP_LENGTH; ++i) {
     if (stars[i] == MAX_STAR_VAL) {
       if (rand() % 100 < DESPAWN_PROBABILITY) {
         --stars[i];
@@ -333,6 +335,25 @@ void twinkle() {
   FastLED.show();
 }
 
+void lightsaber_battle() {
+  static uint64_t prev_time;
+  static const uint16_t DELAY = 20;
+  static const uint8_t FADE = 40;
+
+  static Player p1{CRGB(128, 0, 0), 30, (uint16_t) ((rand() % TOP_LENGTH) + TOP_RIGHT_INDEX), 30, 1, TOP_RIGHT_INDEX, TOP_LEFT_INDEX, 70, 4};
+  static Player p2{CRGB(0, 0, 128), 30, (TOP_LEFT_INDEX + TOP_RIGHT_INDEX) / 2, 30, 1, TOP_RIGHT_INDEX, TOP_LEFT_INDEX, 70, 4};
+  static PhysicsEngine engine{&leds, p1, p2, TOP_RIGHT_INDEX, TOP_LEFT_INDEX};
+
+  if (get_elapsed_time(prev_time) < DELAY)
+    return;
+
+  leds.fadeToBlackBy(FADE);
+  ++engine;
+
+  prev_time = current_millis;
+  FastLED.show();
+}
+
 void setup() {
   // instantiating array
   setup_pins();
@@ -342,35 +363,10 @@ void setup() {
   delay(2000);
 }
 
-// void loop() {
-//   // put your main code here, to run repeatedly:
-//   current_millis = millis();
-//   dispatch_function();
-
-//   current_function();
-// }
-
-void updateAccel(Player& player) {
-  if (abs(player.getVel()) >= 4 && ((player.getVel() < 0) ^ (player.getAccel() > 0)))
-    player.setAccel(player.getAccel() * -1);
-}
-
 void loop() {
   // put your main code here, to run repeatedly:
-  clear_leds();
-  uint16_t pos1 = rand() % (TOP_LEFT_INDEX - TOP_RIGHT_INDEX) + TOP_RIGHT_INDEX;
-  uint16_t pos2 = rand() % (TOP_LEFT_INDEX - TOP_RIGHT_INDEX) + TOP_RIGHT_INDEX;
-  
-  Player p1{CRGB(128, 0, 0), pos1, 3, -1, 4, 1};
-  Player p2{CRGB(0, 0, 128), pos2, -3, -1, 4, 1};
+  current_millis = millis();
+  dispatch_function();
 
-  PhysicsEngine engine{&leds, p1, p2, TOP_RIGHT_INDEX, TOP_LEFT_INDEX};
-
-  while (1) {
-    leds.fadeToBlackBy(128);
-
-    ++engine;
-
-    FastLED.delay(50);
-  }
+  current_function();
 }
