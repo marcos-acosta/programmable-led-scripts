@@ -387,8 +387,8 @@ void polyrhythm() {
   static const uint16_t DELAY = 20;
   static const uint8_t FADE = 40;
 
-  static Player p1{CRGB(128, 0, 0), 0, 40, 0, 0, TOP_RIGHT_INDEX - 2, 40, 0};
-  static Player p2{CRGB(0, 0, 128), TOP_LEFT_INDEX, -30, 0, TOP_LEFT_INDEX + 2, NUM_LEDS - 1, 30, 0};
+  static Player p1{CRGB(128, 0, 0), 10, 0, 40, 0, 0, TOP_RIGHT_INDEX - 2, 40, 0};
+  static Player p2{CRGB(0, 0, 128), 10, TOP_LEFT_INDEX, -30, 0, TOP_LEFT_INDEX + 2, NUM_LEDS - 1, 30, 0};
 
   if (get_elapsed_time(prev_time) < DELAY)
     return;

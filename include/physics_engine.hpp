@@ -15,7 +15,7 @@
 
 class PhysicsEngine {
  public:
-  CRGBArray<NUM_LEDS_PRIV> leds_;
+  CRGBArray<NUM_LEDS_PRIV>& leds_;
   Player player1_;
   Player player2_;
   uint16_t lBound_, uBound_;
