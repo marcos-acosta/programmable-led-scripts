@@ -3,8 +3,9 @@
 #include <FastLED.h>
 #include <stdlib.h>
 
-#define ACCEL_CONST 10000
+#define ACCEL_CONST 12000
 #define PROB_PASS 80
+#define COLL_COLOR CRGB(255, 255, 255)
 
 PhysicsEngine::PhysicsEngine(
   CRGBArray<NUM_LEDS_PRIV>& leds,
@@ -35,7 +36,7 @@ bool PhysicsEngine::doesCollide() {
   bool collides = prev_dir != sgn(pos1 - pos2);
   prev_dir = sgn(pos1 - pos2);
 
-  return collides;
+  return collides || !(pos1 - pos2);
 }
 
 void PhysicsEngine::evolve() {
@@ -62,19 +63,47 @@ void PhysicsEngine::updateAccel() {
   player2_.setAccel(sgn2 * ACCEL_CONST / dist / dist);
 }
 
+static uint8_t generateDelay() {
+  uint8_t probability = rand() % 100;
+
+  if (probability < 30)
+    return 1;
+  else if (probability < 55)
+    return 2;
+  else if (probability < 75)
+    return 3;
+  else if (probability < 90)
+    return 4;
+  else
+    return 5;
+}
+
 void PhysicsEngine::updateCollision() {
   if (!doesCollide()) return;
 
+  uint8_t new_pos = (player1_.getPos() + player2_.getPos()) / 2;
+
+  player1_.setPos(new_pos);
+  player1_.setPos(new_pos);
+
+  // update leds
+  leds_[new_pos - 1] += COLL_COLOR;
+  leds_[new_pos] += COLL_COLOR;
+
   // random struggle time
-  delay(rand() % 5 * 10);
+  delay(generateDelay() * 10);
 
   int8_t new_dir = rand() % 100 > PROB_PASS ? 1 : -1;
 
-  uint8_t vel1 = (player1_.getMaxVel() / 2) + rand() % (player1_.getMaxVel() / 2);
-  uint8_t vel2 = (player2_.getMaxVel() / 2) + rand() % (player2_.getMaxVel() / 2);
+  uint8_t vel1 = (player1_.getMaxVel() / 4) + rand() % (3 * player1_.getMaxVel() / 4);
+  uint8_t vel2 = (player2_.getMaxVel() / 4) + rand() % (3 * player2_.getMaxVel() / 4);
 
   player1_.setVel(new_dir * sgn(player1_.getVel()) * vel1);
   player2_.setVel(new_dir * sgn(player2_.getVel()) * vel2);
+
+  // check to make sure that the players have different velocity
+  if (sgn(player1_.getVel()) == sgn(player2_.getVel()))
+    player1_.setVel(player1_.getVel() * -1);
 }
 
 PhysicsEngine& PhysicsEngine::operator++() {
