@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
+#include "player.hpp"
+#include "physics_engine.hpp"
 
 #define NUM_LEDS 300
 #define LED_PORT 6
@@ -7,6 +9,11 @@
 #define INPUT_PIN_1 2
 #define INPUT_PIN_2 3
 #define INPUT_PIN_3 4
+#define INPUT_PIN_4 5
+
+#define TOP_RIGHT_INDEX 76
+#define TOP_LEFT_INDEX 223
+#define TOP_LENGTH (TOP_LEFT_INDEX - TOP_RIGHT_INDEX)
 
 // defining led array
 CRGBArray<NUM_LEDS> leds;
@@ -22,10 +29,8 @@ void snake();
 void color_wave();
 void meteor();
 void twinkle();
-
-// boundary constants
-const uint8_t TOP_RIGHT_INDEX = 76;
-const uint8_t TOP_LEFT_INDEX = 224;
+void lightsaber_battle();
+void polyrhythm();
 
 // helper functions
 uint64_t get_elapsed_time(uint64_t curr_time) {
@@ -36,17 +41,19 @@ void setup_pins() {
   pinMode(INPUT_PIN_1, INPUT_PULLUP);
   pinMode(INPUT_PIN_2, INPUT_PULLUP);
   pinMode(INPUT_PIN_3, INPUT_PULLUP);
+  pinMode(INPUT_PIN_4, INPUT_PULLUP);
 }
 
 void dispatch_function() {
   static uint8_t last_func_code;
   static uint8_t func_code;
 
-  uint8_t pin_1 = digitalRead(INPUT_PIN_3) << 2;
-  uint8_t pin_2 = digitalRead(INPUT_PIN_2) << 1;
-  uint8_t pin_3 = digitalRead(INPUT_PIN_1);
+  uint8_t pin_1 = digitalRead(INPUT_PIN_4) << 3;
+  uint8_t pin_2 = digitalRead(INPUT_PIN_3) << 2;
+  uint8_t pin_3 = digitalRead(INPUT_PIN_2) << 1;
+  uint8_t pin_4 = digitalRead(INPUT_PIN_1);
 
-  func_code = 7 - (pin_1 | pin_2 | pin_3);
+  func_code = 15 - (pin_1 | pin_2 | pin_3 | pin_4);
 
   if (last_func_code != func_code) {
     clear_leds();
@@ -76,6 +83,30 @@ void dispatch_function() {
       current_function = &twinkle;
       break;
     case 7:
+      current_function = &lightsaber_battle;
+      break;
+    case 8:
+      current_function = &polyrhythm;
+      break;
+    case 9:
+      current_function = &clear_leds;
+      break;
+    case 10:
+      current_function = &clear_leds;
+      break;
+    case 11:
+      current_function = &clear_leds;
+      break;
+    case 12:
+      current_function = &clear_leds;
+      break;
+    case 13:
+      current_function = &clear_leds;
+      break;
+    case 14:
+      current_function = &clear_leds;
+      break;
+    case 15:
       current_function = &clear_leds;
       break;
     default:
@@ -297,7 +328,7 @@ void twinkle() {
 
   // Uses arbitrary brightness scale; max value must be odd
   static const uint8_t MAX_STAR_VAL = 41;
-  static uint8_t stars[TOP_LEFT_INDEX - TOP_RIGHT_INDEX] = {0};
+  static uint8_t stars[TOP_LENGTH] = {0};
   uint8_t new_index;
 
   if (get_elapsed_time(prev_time) < DELAY)
@@ -307,14 +338,14 @@ void twinkle() {
     // A star is born
     // ensure that the new index does not coincide with a star that already exists
     do {
-      new_index = rand() % (TOP_LEFT_INDEX - TOP_RIGHT_INDEX);
+      new_index = rand() % TOP_LENGTH;
     } while (stars[new_index] > 0);
     
     stars[new_index] = 1;
   }
 
   // reset all values
-  for (uint8_t i = 0; i < (TOP_LEFT_INDEX - TOP_RIGHT_INDEX); ++i) {
+  for (uint8_t i = 0; i < TOP_LENGTH; ++i) {
     if (stars[i] == MAX_STAR_VAL) {
       if (rand() % 100 < DESPAWN_PROBABILITY) {
         --stars[i];
@@ -327,6 +358,46 @@ void twinkle() {
 
     leds[TOP_RIGHT_INDEX + i] = CHSV(STAR_HUE, STAR_SATURATION, MAX_BRIGHTNESS * stars[i] / MAX_STAR_VAL);
   }
+
+  prev_time = current_millis;
+  FastLED.show();
+}
+
+void lightsaber_battle() {
+  static uint64_t prev_time;
+  static const uint16_t DELAY = 20;
+  static const uint8_t FADE = 40;
+
+  static Player p1{CRGB(128, 0, 0), 30, (uint16_t) ((rand() % TOP_LENGTH) + TOP_RIGHT_INDEX), 30, 1, TOP_RIGHT_INDEX, TOP_LEFT_INDEX, 70, 4};
+  static Player p2{CRGB(0, 0, 128), 30, (TOP_LEFT_INDEX + TOP_RIGHT_INDEX) / 2, 30, 1, TOP_RIGHT_INDEX, TOP_LEFT_INDEX, 70, 4};
+  static PhysicsEngine engine{leds, p1, p2, TOP_RIGHT_INDEX, TOP_LEFT_INDEX};
+
+  if (get_elapsed_time(prev_time) < DELAY)
+    return;
+
+  leds.fadeToBlackBy(FADE);
+  ++engine;
+
+  prev_time = current_millis;
+  FastLED.show();
+}
+
+void polyrhythm() {
+  static uint64_t prev_time;
+  static const uint16_t DELAY = 20;
+  static const uint8_t FADE = 40;
+
+  static Player p1{CRGB(128, 0, 0), 10, 0, 40, 0, 0, TOP_RIGHT_INDEX - 2, 40, 0};
+  static Player p2{CRGB(0, 0, 128), 10, TOP_LEFT_INDEX, -30, 0, TOP_LEFT_INDEX + 2, NUM_LEDS - 1, 30, 0};
+
+  if (get_elapsed_time(prev_time) < DELAY)
+    return;
+
+  leds.fadeToBlackBy(FADE);
+  ++p1; ++p2;
+
+  leds[p1.getPos()] += p1.getColor();
+  leds[NUM_LEDS - (p2.getPos() - p2.getMinPos()) - 1] += p2.getColor();
 
   prev_time = current_millis;
   FastLED.show();
