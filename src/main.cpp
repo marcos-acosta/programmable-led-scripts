@@ -31,6 +31,7 @@ void meteor();
 void twinkle();
 void lightsaber_battle();
 void polyrhythm();
+void rule110();
 
 // helper functions
 uint64_t get_elapsed_time(uint64_t curr_time) {
@@ -89,7 +90,7 @@ void dispatch_function() {
       current_function = &polyrhythm;
       break;
     case 9:
-      current_function = &clear_leds;
+      current_function = &rule110;
       break;
     case 10:
       current_function = &clear_leds;
@@ -398,6 +399,42 @@ void polyrhythm() {
 
   leds[p1.getPos()] += p1.getColor();
   leds[NUM_LEDS - (p2.getPos() - p2.getMinPos()) - 1] += p2.getColor();
+
+  prev_time = current_millis;
+  FastLED.show();
+}
+
+void rule110() {
+  static uint16_t prev_time;
+  static const uint16_t DELAY = 100;
+  static bool init = true;
+  static uint8_t cells[TOP_LENGTH] = {0};
+  static const uint8_t RULE = 0b01101110;
+  static uint8_t buffer_val;
+  static uint8_t temp;
+
+  if (get_elapsed_time(prev_time) < DELAY)
+    return;
+
+  if (init) {
+    cells[TOP_LENGTH - 1] = 1;
+    init = false;
+  } else {
+    uint8_t prev_iteration_output;
+    for (uint8_t i = 0; i < TOP_LENGTH; ++i) {
+      prev_iteration_output = ((i == 0 ? 0 : cells[i-1]) << 2) | (cells[i] << 1) | (i == TOP_LENGTH - 1 ? 0 : cells[i+1]);
+      temp = (RULE >> prev_iteration_output) & 1;
+      if (i > 0) {
+        cells[i - 1] = buffer_val;
+      }
+      buffer_val = temp;
+    }
+    cells[TOP_LENGTH - 1] = buffer_val;
+  }
+
+  for (int i = 0; i < TOP_LENGTH; ++i) {
+    leds[TOP_RIGHT_INDEX + i] = (cells[i] == 1) ? CRGB(0, 0, 64) : CRGB(0, 0, 0);
+  }
 
   prev_time = current_millis;
   FastLED.show();
