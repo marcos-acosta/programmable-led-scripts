@@ -37,6 +37,7 @@ void polyrhythm();
 void pleasant();
 void xmas_banner();
 void snowflakes();
+void christmas();
 
 // helper functions
 uint64_t get_elapsed_time(uint64_t curr_time) {
@@ -98,10 +99,10 @@ void dispatch_function() {
       current_function = &pleasant;
       break;
     case 10:
-      current_function = &snowflakes;
+      current_function = &christmas;
       break;
     case 11:
-      current_function = &xmas_banner;
+      current_function = &clear_leds;
       break;
     case 12:
       current_function = &clear_leds;
@@ -428,18 +429,18 @@ void xmas_banner() {
   static uint64_t prev_time;
   static const uint16_t DELAY = 400;
   static uint8_t shift = 0;
-  static const CRGB GREEN{0, 50, 0};
-  static const CRGB RED{50, 0, 0};
+  static const CRGB GREEN{0, 40, 0};
+  static const CRGB RED{40, 0, 0};
 
   if (get_elapsed_time(prev_time) < DELAY)
     return;
 
   for (uint8_t i = 0; i <= TOP_LENGTH; ++i) {
     leds[TOP_RIGHT_INDEX + i] = 
-      (((i + shift) / 3) % 2) ? GREEN : RED;
+      (((i + shift) / 6) % 2) ? GREEN : RED;
   }
 
-  shift = (shift + 1) % 6;
+  shift = (shift + 1) % 12;
 
   prev_time = current_millis;
   FastLED.show();
@@ -447,9 +448,9 @@ void xmas_banner() {
   
 void snowflakes() {
   static uint64_t prev_time;
-  static const uint16_t DELAY = 200;
+  static const uint16_t DELAY = 300;
   static const uint8_t hue = 128;
-  static const uint8_t PROB_GENERATE = 60;
+  static const uint8_t PROB_GENERATE = 40;
 
   if (get_elapsed_time(prev_time) < DELAY)
     return;
@@ -472,6 +473,11 @@ void snowflakes() {
 
   prev_time = current_millis;
   FastLED.show();
+}
+
+void christmas() {
+  snowflakes();
+  xmas_banner();
 }
 
 void setup() {
