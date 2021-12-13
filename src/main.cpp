@@ -31,6 +31,7 @@ void meteor();
 void twinkle();
 void lightsaber_battle();
 void polyrhythm();
+void pleasant();
 
 // helper functions
 uint64_t get_elapsed_time(uint64_t curr_time) {
@@ -89,7 +90,7 @@ void dispatch_function() {
       current_function = &polyrhythm;
       break;
     case 9:
-      current_function = &clear_leds;
+      current_function = &pleasant;
       break;
     case 10:
       current_function = &clear_leds;
@@ -398,6 +399,21 @@ void polyrhythm() {
 
   leds[p1.getPos()] += p1.getColor();
   leds[NUM_LEDS - (p2.getPos() - p2.getMinPos()) - 1] += p2.getColor();
+
+  prev_time = current_millis;
+  FastLED.show();
+}
+
+void pleasant() {
+  static uint64_t prev_time;
+  static const uint16_t DELAY = 200;
+
+  if (get_elapsed_time(prev_time) < DELAY)
+    return;
+
+  for (uint16_t i = 0; i < NUM_LEDS; ++i) {
+    leds[i] = CHSV(41, 255, 128);
+  }
 
   prev_time = current_millis;
   FastLED.show();
