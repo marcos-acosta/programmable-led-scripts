@@ -12,7 +12,10 @@
 #define INPUT_PIN_4 5
 
 #define TOP_RIGHT_INDEX 76
+#define RIGHT_TOP_INDEX 75
+
 #define TOP_LEFT_INDEX 223
+#define LEFT_TOP_INDEX 225
 #define TOP_LENGTH (TOP_LEFT_INDEX - TOP_RIGHT_INDEX)
 
 // defining led array
@@ -33,6 +36,7 @@ void lightsaber_battle();
 void polyrhythm();
 void pleasant();
 void xmas_banner();
+void snowflakes();
 
 // helper functions
 uint64_t get_elapsed_time(uint64_t curr_time) {
@@ -94,7 +98,7 @@ void dispatch_function() {
       current_function = &pleasant;
       break;
     case 10:
-      current_function = &clear_leds;
+      current_function = &snowflakes;
       break;
     case 11:
       current_function = &xmas_banner;
@@ -431,12 +435,40 @@ void xmas_banner() {
     return;
 
   for (uint8_t i = 0; i <= TOP_LENGTH; ++i) {
-    leds[TOP_RIGHT_INDEX + i] = (((i + shift) / 3) % 2) == 0
-              ? GREEN
-              : RED;
+    leds[TOP_RIGHT_INDEX + i] = 
+      (((i + shift) / 3) % 2) ? GREEN : RED;
   }
 
   shift = (shift + 1) % 6;
+
+  prev_time = current_millis;
+  FastLED.show();
+}
+  
+void snowflakes() {
+  static uint64_t prev_time;
+  static const uint16_t DELAY = 200;
+  static const uint8_t hue = 128;
+  static const uint8_t PROB_GENERATE = 60;
+
+  if (get_elapsed_time(prev_time) < DELAY)
+    return;
+
+  bool generate_left = (rand() % 100) < PROB_GENERATE;
+  uint8_t value_left = (rand() % 17) * 9 * generate_left;
+
+  bool generate_right = (rand() % 100) < PROB_GENERATE;
+  uint8_t value_right = (rand() % 17) * 9 * generate_right;
+
+  // snowflakes descend
+  for (uint8_t i = 0; i < RIGHT_TOP_INDEX; ++i) {
+    leds[i] = leds[i + 1];
+    leds[NUM_LEDS - i - 1] = leds[NUM_LEDS - i - 2];
+  }
+
+  // generate new snowflake if necessary
+  leds[RIGHT_TOP_INDEX] = CHSV(hue, 160, value_right);
+  leds[LEFT_TOP_INDEX] = CHSV(hue, 160, value_left);
 
   prev_time = current_millis;
   FastLED.show();
